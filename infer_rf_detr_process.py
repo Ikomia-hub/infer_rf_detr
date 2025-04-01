@@ -6,9 +6,7 @@ import io
 import requests
 import supervision as sv
 from PIL import Image
-from rfdetr import RFDETRBase, RFDETRLarge
 from rfdetr.util.coco_classes import COCO_CLASSES
-from rfdetr.util.files import download_file
 from infer_rf_detr.utils.model_utils import load_model
 
 
