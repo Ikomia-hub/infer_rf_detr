@@ -1,3 +1,26 @@
+<div align="center">
+  <img src="images/icon.png" alt="Algorithm icon">
+  <h1 align="center">infer_rf_detr</h1>
+</div>
+<br />
+<p align="center">
+    <a href="https://github.com/Ikomia-hub/infer_rf_detr">
+        <img alt="Stars" src="https://img.shields.io/github/stars/Ikomia-hub/infer_rf_detr">
+    </a>
+    <a href="https://app.ikomia.ai/hub/">
+        <img alt="Website" src="https://img.shields.io/website/http/app.ikomia.ai/en.svg?down_color=red&down_message=offline&up_message=online">
+    </a>
+    <a href="https://github.com/Ikomia-hub/infer_rf_detr/blob/main/LICENSE.md">
+        <img alt="GitHub" src="https://img.shields.io/github/license/Ikomia-hub/infer_rf_detr.svg?color=blue">
+    </a>    
+    <br>
+    <a href="https://discord.com/invite/82Tnw9UGGc">
+        <img alt="Discord community" src="https://img.shields.io/badge/Discord-white?style=social&logo=discord">
+    </a> 
+</p>
+
+
+
 Run RF-DETR object detection models.
 
 ![Desk object detection](https://raw.githubusercontent.com/Ikomia-hub/infer_rf_detr/feat/new_readme/images/output.jpg)
