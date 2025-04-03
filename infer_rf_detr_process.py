@@ -74,7 +74,7 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
         # This is handled by the main progress bar of Ikomia Studio
         return 1
 
-    def adjust_to_multiple(self, value, base=14):
+    def adjust_to_multiple(self, value, base=56):
         """Adjust value down to the nearest multiple of 'base'."""
         return (value // base) * base
 
