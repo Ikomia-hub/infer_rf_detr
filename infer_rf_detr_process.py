@@ -1,10 +1,8 @@
 import copy
 from ikomia import core, dataprocess, utils
 import torch
-import os
-import io
-import requests
-import supervision as sv
+import yaml
+
 from PIL import Image
 from rfdetr.util.coco_classes import COCO_CLASSES
 from infer_rf_detr.utils.model_utils import load_model
@@ -26,6 +24,7 @@ class InferRfDetrParam(core.CWorkflowTaskParam):
         self.conf_thres = 0.50
         self.update = False
         self.model_weight_file = ""
+        self.class_file = ""
 
     def set_values(self, param_map):
         # Set parameters values from Ikomia application
@@ -34,6 +33,7 @@ class InferRfDetrParam(core.CWorkflowTaskParam):
         self.input_size = int(param_map["input_size"])
         self.conf_thres = float(param_map["conf_thres"])
         self.model_weight_file = str(param_map["model_weight_file"])
+        self.class_file = str(param_map["class_file"])
         self.update = True
 
     def get_values(self):
@@ -46,6 +46,7 @@ class InferRfDetrParam(core.CWorkflowTaskParam):
         param_map["conf_thres"] = str(self.conf_thres)
         param_map["update"] = str(self.update)
         param_map["model_weight_file"] = str(self.model_weight_file)
+        param_map["class_file"] = str(self.class_file)
         return param_map
 
 
@@ -76,6 +77,23 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
     def adjust_to_multiple(self, value, base=14):
         """Adjust value down to the nearest multiple of 'base'."""
         return (value // base) * base
+
+    def set_class_names(self, param):
+        if param.model_weight_file:
+            if not param.class_file:
+                raise ValueError(
+                    "The config_file 'class_names.yaml' is required when using a custom model file.")
+            else:
+                # load class names from file .yaml
+                with open(param.class_file, 'r') as f:
+                    config = yaml.safe_load(f)
+                    self.classes = config.get('classes', [])
+        else:
+            # Load COCO default class names
+            self.classes = list(COCO_CLASSES.values())
+
+        self.set_names(self.classes)
+        return len(self.classes)
 
     def run(self):
         # Main function of your algorithm
@@ -111,11 +129,8 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             else:
                 self.input_size = param.input_size
 
-            model = load_model(param)
-            print(model)
-
-            self.classes = list(COCO_CLASSES.values())
-            self.set_names(self.classes)
+            num_classes = self.set_class_names(param)
+            model = load_model(param, num_classes)
             self.model_name = param.model_name
 
             print(f"Model {param.model_name} loaded successfully")
@@ -131,13 +146,14 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             confidences = detections.confidence
             class_idx = detections.class_id
 
+            idx_adjust = 0 if param.model_weight_file else 1
             for i, (box, conf, cls) in enumerate(zip(boxes, confidences, class_idx)):
                 x1, y1, x2, y2 = box[0], box[1], box[2], box[3]
                 width = x2 - x1
                 height = y2 - y1
                 self.add_object(
                     i,
-                    int(cls-1),
+                    int(cls-idx_adjust),
                     float(conf),
                     float(x1),
                     float(y1),
@@ -168,9 +184,9 @@ class InferRfDetrFactory(dataprocess.CTaskFactory):
         dataprocess.CTaskFactory.__init__(self)
         # Set algorithm information/metadata here
         self.info.name = "infer_rf_detr"
-        self.info.short_description = "Inference with RD-DETR models"
+        self.info.short_description = "Inference with RF-DETR models"
         # relative path -> as displayed in Ikomia Studio algorithm tree
-        self.info.path = "Plugins/Python"
+        self.info.path = "Plugins/Python/Detection"
         self.info.version = "1.0.0"
         self.info.icon_path = "images/icon.png"
         self.info.authors = "Robinson, Isaac and Robicheaux, Peter and Popov, Matvei"

@@ -1,4 +1,5 @@
 import os
+import yaml
 from rfdetr.util.files import download_file
 from rfdetr import RFDETRBase, RFDETRLarge
 
@@ -10,27 +11,47 @@ HOSTED_MODELS = {
 }
 
 
-def load_model(param):
-    # Determine which weights file to use
-    if param.model_weight_file and os.path.exists(param.model_weight_file):
-        # Use custom weights file if provided and exists
-        model_weights = param.model_weight_file
-        print(f"Using custom weights file: {model_weights}")
-    else:
-        model_weights = download_pretrain_weights(
-            param.model_name)
+def load_model(param, n_classes):
+    """
+    Loads the appropriate model architecture with either custom or pre-trained weights.
 
-    # Load the model based on the specified architecture
-    if param.model_name == "rf-detr-base":
-        model = RFDETRBase(
-            resolution=param.input_size,
-            pretrain_weights=model_weights
-        )
-    elif param.model_name == "rf-detr-large":
-        model = RFDETRLarge(
-            resolution=param.input_size,
-            pretrain_weigths=model_weights
-        )
+    Args:
+        param: An object containing necessary attributes such as model_weight_file,
+               class_file, model_name, and input_size.
+
+    Returns:
+        An instance of the loaded model.
+    """
+
+    # Determine model weights and architecture
+    if param.model_weight_file and os.path.exists(param.model_weight_file):
+        print(f"Using custom weights file: {param.model_weight_file}")
+        model_weights = param.model_weight_file
+
+        with open(param.class_file, 'r') as f:
+            config = yaml.safe_load(f)
+        model_architecture = config.get('model_name', param.model_name)
+    else:
+        model_weights = download_pretrain_weights(param.model_name)
+        model_architecture = param.model_name
+
+    # Select and initialize the model
+    model_classes = {
+        "rf-detr-base": RFDETRBase,
+        "rf-detr-base-2": RFDETRBase,
+        "rf-detr-large": RFDETRLarge,
+    }
+
+    model_class = model_classes.get(model_architecture)
+    if model_class is None:
+        raise ValueError(
+            f"Unsupported model architecture: {model_architecture}")
+
+    model = model_class(
+        resolution=param.input_size,
+        pretrain_weights=model_weights,
+        num_classes=n_classes-1,  # 0 index
+    )
 
     return model
 
