@@ -13,6 +13,5 @@ def get_class_names(param):
                 classes_list = list(config.get('classes', []))
     else:
         classes_list = list(COCO_CLASSES_UPDATE.values())
-        print(f"COCO classes: {len(classes_list)}")
 
     return classes_list

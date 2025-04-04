@@ -63,8 +63,6 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
         else:
             self.set_param_object(copy.deepcopy(param))
         self.device = torch.device("cpu")
-        self.input_size = 560
-        self.classes = None
         self.model = None
         self.model_name = None
 
@@ -73,7 +71,7 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
         # This is handled by the main progress bar of Ikomia Studio
         return 1
 
-    def adjust_to_multiple(self, value, base=56):
+    def adjust_to_multiple(self, value, base=14):
         """Adjust value down to the nearest multiple of 'base'."""
         return (value // base) * base
 
@@ -105,21 +103,19 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             # Check input size is a multiple of 14
             new_input_size = self.adjust_to_multiple(param.input_size)
             if new_input_size != param.input_size:
-                self.input_size = new_input_size
+                param.input_size = new_input_size
                 print(
-                    f"Updating input size to {self.input_size} to be a multiple of 14")
-            else:
-                self.input_size = param.input_size
+                    f"Updating input size to {param.input_size} to be a multiple of 14")
 
             # Set class names
             class_list = get_class_names(param)
             self.set_names(class_list)
             num_classes = len(class_list)
-            print(f"Number of classes: {num_classes}")
+
+            # Load model
             model = load_model(param, num_classes)
             self.model_name = param.model_name
-
-            print(f"Model {param.model_name} loaded successfully")
+            print(f"Model {self.model_name} loaded successfully")
 
             param.update = False
 
