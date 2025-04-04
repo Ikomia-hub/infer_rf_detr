@@ -1,11 +1,10 @@
 import copy
 from ikomia import core, dataprocess, utils
 import torch
-import yaml
 
 from PIL import Image
-from rfdetr.util.coco_classes import COCO_CLASSES
 from infer_rf_detr.utils.model_utils import load_model
+from infer_rf_detr.utils.class_names_utils import get_class_names
 
 
 # --------------------
@@ -78,23 +77,6 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
         """Adjust value down to the nearest multiple of 'base'."""
         return (value // base) * base
 
-    def set_class_names(self, param):
-        if param.model_weight_file:
-            if not param.class_file:
-                raise ValueError(
-                    "The config_file 'class_names.yaml' is required when using a custom model file.")
-            else:
-                # load class names from file .yaml
-                with open(param.class_file, 'r') as f:
-                    config = yaml.safe_load(f)
-                    self.classes = config.get('classes', [])
-        else:
-            # Load COCO default class names
-            self.classes = list(COCO_CLASSES.values())
-
-        self.set_names(self.classes)
-        return len(self.classes)
-
     def run(self):
         # Main function of your algorithm
         # Call begin_task_run() for initialization
@@ -129,7 +111,11 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             else:
                 self.input_size = param.input_size
 
-            num_classes = self.set_class_names(param)
+            # Set class names
+            class_list = get_class_names(param)
+            self.set_names(class_list)
+            num_classes = len(class_list)
+
             model = load_model(param, num_classes)
             self.model_name = param.model_name
 
