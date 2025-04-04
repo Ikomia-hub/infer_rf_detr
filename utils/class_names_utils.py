@@ -1,20 +1,18 @@
-from rfdetr.util.coco_classes import COCO_CLASSES
 import yaml
+from infer_rf_detr.rf_detr.rfdetr.util.coco_classes import COCO_CLASSES_UPDATE
 
 
-# COCO_80_CLASSES_AS_LIST should be the standard list of 80 COCO classes
 def get_class_names(param):
     if param.model_weight_file:
         if not param.class_file:
             raise ValueError(
                 "The config_file 'class_names.yaml' is required when using a custom model file.")
         else:
-            # load class names from file .yaml
             with open(param.class_file, 'r') as f:
                 config = yaml.safe_load(f)
-                self.classes = config.get('classes', [])
+                classes_list = list(config.get('classes', []))
     else:
-        # Load COCO default class names
-        classes_list = list(COCO_CLASSES.values())
+        classes_list = list(COCO_CLASSES_UPDATE.values())
+        print(f"COCO classes: {len(classes_list)}")
 
     return classes_list

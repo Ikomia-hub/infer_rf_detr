@@ -115,7 +115,7 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             class_list = get_class_names(param)
             self.set_names(class_list)
             num_classes = len(class_list)
-
+            print(f"Number of classes: {num_classes}")
             model = load_model(param, num_classes)
             self.model_name = param.model_name
 
