@@ -1,7 +1,7 @@
 import os
 import yaml
-from rfdetr.util.files import download_file
-from rfdetr import RFDETRBase, RFDETRLarge
+from infer_rf_detr.rf_detr.rfdetr.util.files import download_file
+from infer_rf_detr.rf_detr.rfdetr import RFDETRBase, RFDETRLarge
 
 
 HOSTED_MODELS = {
