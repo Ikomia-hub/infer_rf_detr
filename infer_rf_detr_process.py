@@ -104,7 +104,7 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             if new_input_size != param.input_size:
                 param.input_size = new_input_size
                 print(
-                    f"Updating input size to {param.input_size} to be a multiple of 14")
+                    f"Updating input size to {param.input_size} to be a multiple of 56")
 
             # Set class names
             class_list = get_class_names(param)
@@ -112,15 +112,14 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             num_classes = len(class_list)
 
             # Load model
-            model = load_model(param, num_classes)
-            self.model_name = param.model_name
-            print(f"Model {self.model_name} loaded successfully")
+            self.model = load_model(param, num_classes)
+            print(f"Model {param.model_name} loaded successfully")
 
             param.update = False
 
         # Inference
         try:
-            detections = model.predict(image, threshold=param.conf_thres)
+            detections = self.model.predict(image, threshold=param.conf_thres)
 
             # Get detections
             boxes = detections.xyxy
