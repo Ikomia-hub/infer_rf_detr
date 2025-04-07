@@ -11,7 +11,7 @@ HOSTED_MODELS = {
 }
 
 
-def load_model(param, n_classes):
+def load_model(param, n_classes, device):
     """
     Loads the appropriate model architecture with either custom or pre-trained weights.
 
@@ -51,6 +51,7 @@ def load_model(param, n_classes):
         resolution=param.input_size,
         pretrain_weights=model_weights,
         num_classes=n_classes-1,  # 0 index
+        device=device,
     )
 
     return model

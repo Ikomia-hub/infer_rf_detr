@@ -63,7 +63,6 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             self.set_param_object(copy.deepcopy(param))
         self.device = torch.device("cpu")
         self.model = None
-        self.model_name = None
 
     def get_progress_steps(self):
         # Function returning the number of progress steps for this algorithm
@@ -95,9 +94,7 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
         # Load model
         if param.update or self.model is None:
             # Set device as string instead of torch.device object
-            device_str = "cuda" if param.cuda and torch.cuda.is_available() else "cpu"
-            # Keep this for other torch operations
-            self.device = torch.device(device_str)
+            self.device = "cuda" if param.cuda and torch.cuda.is_available() else "cpu"
 
             # Check input size is a multiple of 14
             new_input_size = self.adjust_to_multiple(param.input_size)
@@ -112,7 +109,7 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
             num_classes = len(class_list)
 
             # Load model
-            self.model = load_model(param, num_classes)
+            self.model = load_model(param, num_classes, self.device)
             print(f"Model {param.model_name} loaded successfully")
 
             param.update = False
