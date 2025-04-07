@@ -1,8 +1,7 @@
 import copy
-from ikomia import core, dataprocess, utils
 import torch
-
 from PIL import Image
+from ikomia import core, dataprocess, utils
 from infer_rf_detr.utils.model_utils import load_model
 from infer_rf_detr.utils.class_names_utils import get_class_names
 
