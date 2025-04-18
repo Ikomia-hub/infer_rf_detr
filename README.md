@@ -23,7 +23,7 @@
 
 Run RF-DETR object detection models.
 
-![Desk object detection](https://raw.githubusercontent.com/Ikomia-hub/infer_rf_detr/feat/new_readme/images/output.jpg)
+![Desk object detection](https://raw.githubusercontent.com/Ikomia-hub/infer_rf_detr/main/images/output.jpg)
 
 ## :rocket: Use with Ikomia API
 
