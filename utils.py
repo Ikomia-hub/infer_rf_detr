@@ -9,6 +9,16 @@ from rfdetr.detr import RFDETR, RFDETRNano, RFDETRSmall, RFDETRMedium, RFDETRBas
 from rfdetr.main import HOSTED_MODELS
 
 
+MODEL_CLASSES = {
+    "rf-detr-nano": RFDETRNano,
+    "rf-detr-small": RFDETRSmall,
+    "rf-detr-medium": RFDETRMedium,
+    "rf-detr-base": RFDETRBase,
+    "rf-detr-base-2": RFDETRBase,
+    "rf-detr-large": RFDETRLarge,
+}
+
+
 def adjust_to_multiple(value, base=32):
     """Adjust value down to the nearest multiple of 'base'."""
     return (value // base) * base
@@ -41,15 +51,6 @@ def load_model(param, class_count: int) -> RFDETR:
     Returns:
         An instance of the loaded model.
     """
-    model_classes = {
-        "rf-detr-nano": RFDETRNano,
-        "rf-detr-small": RFDETRSmall,
-        "rf-detr-medium": RFDETRMedium,
-        "rf-detr-base": RFDETRBase,
-        "rf-detr-base-2": RFDETRBase,
-        "rf-detr-large": RFDETRLarge,
-    }
-
     # Determine model weights and architecture
     if param.model_weight_file and os.path.exists(param.model_weight_file):
         print(f"Using custom weights file: {param.model_weight_file}")
@@ -64,7 +65,7 @@ def load_model(param, class_count: int) -> RFDETR:
         model_architecture = param.model_name
 
     # Select and initialize the model
-    model_class = model_classes.get(model_architecture)
+    model_class = MODEL_CLASSES.get(model_architecture)
     if model_class is None:
         raise ValueError(
             f"Unsupported model architecture: {model_architecture}")
