@@ -5,7 +5,7 @@ from PIL import Image
 
 from ikomia import core, dataprocess, utils
 
-from infer_rf_detr.utils import adjust_to_multiple, get_class_names, load_model
+from infer_rf_detr.utils import get_class_names, load_model
 
 
 # --------------------
@@ -75,12 +75,6 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
 
     def _load_model(self):
         param = self.get_param_object()
-
-        # Check input size is a multiple of 32
-        new_input_size = adjust_to_multiple(param.input_size)
-        if new_input_size != param.input_size:
-            param.input_size = new_input_size
-            print(f"Updating input size to {param.input_size} to be a multiple of 32")
 
         # Set class names
         class_list, self.class_ids = get_class_names(param)

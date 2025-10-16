@@ -5,6 +5,7 @@ import torch
 
 from rfdetr.util.coco_classes import COCO_CLASSES
 from rfdetr.util.files import download_file
+from rfdetr.config import RFDETRNanoConfig, RFDETRSmallConfig, RFDETRMediumConfig, RFDETRBaseConfig, RFDETRLargeConfig
 from rfdetr.detr import RFDETR, RFDETRNano, RFDETRSmall, RFDETRMedium, RFDETRBase, RFDETRLarge
 from rfdetr.main import HOSTED_MODELS
 
@@ -18,10 +19,21 @@ MODEL_CLASSES = {
     "rf-detr-large": RFDETRLarge,
 }
 
+MODEL_CONFIG_CLASSES = {
+    "rf-detr-nano": RFDETRNanoConfig,
+    "rf-detr-small": RFDETRSmallConfig,
+    "rf-detr-medium": RFDETRMediumConfig,
+    "rf-detr-base": RFDETRBaseConfig,
+    "rf-detr-base-2": RFDETRBaseConfig,
+    "rf-detr-large": RFDETRLargeConfig,
+}
 
-def adjust_to_multiple(value, base=32):
-    """Adjust value down to the nearest multiple of 'base'."""
-    return (value // base) * base
+
+def adjust_input_size(model_name: str, input_size: int) -> tuple:
+    """Get input size multiple of block_size."""
+    config = MODEL_CONFIG_CLASSES.get(model_name)()
+    block_size = config.patch_size * config.num_windows
+    return (input_size // block_size) * block_size, block_size
 
 
 def get_class_names(param) -> tuple:
@@ -69,6 +81,12 @@ def load_model(param, class_count: int) -> RFDETR:
     if model_class is None:
         raise ValueError(
             f"Unsupported model architecture: {model_architecture}")
+
+    # Adjust input size
+    new_input_size, block_size = adjust_input_size(model_architecture, param.input_size)
+    if new_input_size != param.input_size:
+        param.input_size = new_input_size
+        print(f"Updating input size to {param.input_size} to be a multiple of {block_size}")
 
     device = "cuda" if param.cuda and torch.cuda.is_available() else "cpu"
     model = model_class(
