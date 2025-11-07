@@ -1,10 +1,13 @@
-from ikomia import core, dataprocess
-from ikomia.utils import pyqtutils, qtconversion
-from infer_rf_detr.infer_rf_detr_process import InferRfDetrParam
+import torch
 
 # PyQt GUI framework
 from PyQt5.QtWidgets import *
-from torch.cuda import is_available
+
+from ikomia import core, dataprocess
+from ikomia.utils import pyqtutils, qtconversion
+
+from infer_rf_detr.infer_rf_detr_process import InferRfDetrParam
+from infer_rf_detr.utils import MODEL_CLASSES
 
 
 # --------------------
@@ -26,14 +29,16 @@ class InferRfDetrWidget(core.CWorkflowTaskWidget):
 
         # Cuda
         self.check_cuda = pyqtutils.append_check(
-            self.grid_layout, "Cuda", self.parameters.cuda and is_available())
-        self.check_cuda.setEnabled(is_available())
+            self.grid_layout,
+            "Cuda",
+            self.parameters.cuda and torch.cuda.is_available()
+        )
+        self.check_cuda.setEnabled(torch.cuda.is_available())
 
         # Model name
-        self.combo_model = pyqtutils.append_combo(
-            self.grid_layout, "Model name")
-        self.combo_model.addItem("rf-detr-base")
-        self.combo_model.addItem("rf-detr-large")
+        self.combo_model = pyqtutils.append_combo(self.grid_layout, "Model name")
+        for model_name in MODEL_CLASSES:
+            self.combo_model.addItem(model_name)
 
         self.combo_model.setCurrentText(self.parameters.model_name)
 
@@ -41,8 +46,7 @@ class InferRfDetrWidget(core.CWorkflowTaskWidget):
         custom_weight = bool(self.parameters.model_weight_file)
         self.check_cfg = QCheckBox("Custom model")
         self.check_cfg.setChecked(custom_weight)
-        self.grid_layout.addWidget(
-            self.check_cfg, self.grid_layout.rowCount(), 0, 1, 2)
+        self.grid_layout.addWidget(self.check_cfg, self.grid_layout.rowCount(), 0, 1, 2)
         self.check_cfg.stateChanged.connect(self.on_custom_weight_changed)
 
         self.label_hyp = QLabel("Model weight (.pt)")
@@ -109,9 +113,11 @@ class InferRfDetrWidget(core.CWorkflowTaskWidget):
         self.parameters.cuda = self.check_cuda.isChecked()
         self.parameters.input_size = self.spin_input_size.value()
         self.parameters.conf_thres = self.spin_conf_thres.value()
+
         if self.check_cfg.isChecked():
             self.parameters.model_weight_file = self.browse_weight_file.path
             self.parameters.class_file = self.browse_class_file.path
+
         self.parameters.update = True
 
         # Send signal to launch the process
