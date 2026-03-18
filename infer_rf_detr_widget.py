@@ -1,7 +1,7 @@
 import torch
 
 # PyQt GUI framework
-from PyQt5.QtWidgets import *
+from PyQt6.QtWidgets import *
 
 from ikomia import core, dataprocess
 from ikomia.utils import pyqtutils, qtconversion
@@ -53,29 +53,15 @@ class InferRfDetrWidget(core.CWorkflowTaskWidget):
         self.browse_weight_file = pyqtutils.BrowseFileWidget(
             path=self.parameters.model_weight_file,
             tooltip="Select file",
-            mode=QFileDialog.ExistingFile
+            mode=QFileDialog.FileMode.ExistingFile
         )
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(self.label_hyp, row, 0)
         self.grid_layout.addWidget(self.browse_weight_file, row, 1)
 
-        # Class file selection
-        self.label_class_file = QLabel("Class file (.yaml)")
-        self.browse_class_file = pyqtutils.BrowseFileWidget(
-            path=self.parameters.class_file,
-            tooltip="Select class file",
-            mode=QFileDialog.ExistingFile
-        )
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(self.label_class_file, row, 0)
-        self.grid_layout.addWidget(self.browse_class_file, row, 1)
-
         # Ensure visibility based on custom weight toggle
         self.label_hyp.setVisible(custom_weight)
         self.browse_weight_file.setVisible(custom_weight)
-
-        self.label_class_file.setVisible(custom_weight)
-        self.browse_class_file.setVisible(custom_weight)
 
         # Input size
         self.spin_input_size = pyqtutils.append_spin(
@@ -104,8 +90,6 @@ class InferRfDetrWidget(core.CWorkflowTaskWidget):
     def on_custom_weight_changed(self, int):
         self.label_hyp.setVisible(self.check_cfg.isChecked())
         self.browse_weight_file.setVisible(self.check_cfg.isChecked())
-        self.label_class_file.setVisible(self.check_cfg.isChecked())
-        self.browse_class_file.setVisible(self.check_cfg.isChecked())
 
     def on_apply(self):
         # Apply button clicked slot
@@ -116,7 +100,6 @@ class InferRfDetrWidget(core.CWorkflowTaskWidget):
 
         if self.check_cfg.isChecked():
             self.parameters.model_weight_file = self.browse_weight_file.path
-            self.parameters.class_file = self.browse_class_file.path
 
         self.parameters.update = True
 

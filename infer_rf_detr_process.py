@@ -23,7 +23,6 @@ class InferRfDetrParam(core.CWorkflowTaskParam):
         self.update = False
         self.model_weight_file = ""
         self.config_file = ""
-        self.config_file = ""
 
     def set_values(self, param_map):
         # Set parameters values from Ikomia application
@@ -160,7 +159,7 @@ class InferRfDetrFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Inference with RF-DETR models"
         # relative path -> as displayed in Ikomia Studio algorithm tree
         self.info.path = "Plugins/Python/Detection"
-        self.info.version = "1.1.1"
+        self.info.version = "1.2.0"
         self.info.icon_path = "images/icon.png"
         self.info.authors = "Robinson, Isaac and Robicheaux, Peter and Popov, Matvei"
         self.info.article = ""
@@ -169,11 +168,11 @@ class InferRfDetrFactory(dataprocess.CTaskFactory):
         self.info.license = "Apache-2.0"
 
         # Ikomia API compatibility
-        self.info.min_ikomia_version = "0.15.0"
+        self.info.min_ikomia_version = "0.16.0"
         # self.info.max_ikomia_version = "0.11.1"
 
         # Python compatibility
-        self.info.min_python_version = "3.9.0"
+        self.info.min_python_version = "3.10.0"
         # self.info.max_python_version = "3.11.0"
 
         # URL of documentation
