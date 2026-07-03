@@ -1,13 +1,31 @@
 import os
+import shutil
+from contextlib import contextmanager
+from pathlib import Path
+
 import yaml
 
 import torch
 
 from rfdetr.util.coco_classes import COCO_CLASSES
-from rfdetr.util.files import download_file
-from rfdetr.config import RFDETRNanoConfig, RFDETRSmallConfig, RFDETRMediumConfig, RFDETRBaseConfig, RFDETRLargeConfig
+from rfdetr.config import (
+    RFDETRNanoConfig,
+    RFDETRSmallConfig,
+    RFDETRMediumConfig,
+    RFDETRBaseConfig,
+    RFDETRLargeConfig,
+)
 from rfdetr.detr import RFDETR, RFDETRNano, RFDETRSmall, RFDETRMedium, RFDETRBase, RFDETRLarge
-from rfdetr.main import OPEN_SOURCE_MODELS
+
+try:
+    import rfdetr.main as rfdetr_main
+except ImportError:
+    rfdetr_main = None
+
+try:
+    from rfdetr.util.files import download_file
+except ImportError:
+    download_file = None
 
 
 MODEL_CLASSES = {
@@ -51,6 +69,66 @@ def get_class_names(param) -> tuple:
 
     return classes, class_ids
 
+
+@contextmanager
+def _chdir(path):
+    previous = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
+
+
+def _weights_dir():
+    weights_dir = Path(__file__).resolve().parent / "weights"
+    weights_dir.mkdir(parents=True, exist_ok=True)
+    return weights_dir
+
+
+def _hosted_models():
+    if rfdetr_main is None:
+        return {}
+
+    return (
+        getattr(rfdetr_main, "HOSTED_MODELS", None)
+        or getattr(rfdetr_main, "OPEN_SOURCE_MODELS", None)
+        or {}
+    )
+
+
+def _download_with_rfdetr_helper(filename, output_path):
+    if rfdetr_main is None:
+        return False
+
+    download_pretrain_weights = getattr(rfdetr_main, "download_pretrain_weights", None)
+    if download_pretrain_weights is None:
+        return False
+
+    with _chdir(output_path.parent):
+        download_pretrain_weights(filename)
+
+    return output_path.exists()
+
+
+def _download_with_url(filename, output_path):
+    hosted_models = _hosted_models()
+    if filename not in hosted_models or download_file is None:
+        return False
+
+    download_file(hosted_models[filename], str(output_path))
+    return output_path.exists()
+
+
+def _copy_from_roboflow_cache(filename, output_path):
+    cache_path = Path.home() / ".roboflow" / "models" / filename
+    if not cache_path.exists():
+        return False
+
+    shutil.copy2(cache_path, output_path)
+    print(f"Copied RF-DETR weights from {cache_path} to {output_path}")
+    return True
+
 def load_model(param, class_count: int) -> RFDETR:
     """
     Loads the appropriate model architecture with either custom or pre-trained weights.
@@ -89,32 +167,47 @@ def load_model(param, class_count: int) -> RFDETR:
         print(f"Updating input size to {param.input_size} to be a multiple of {block_size}")
 
     device = "cuda" if param.cuda and torch.cuda.is_available() else "cpu"
-    model = model_class(
-        resolution=param.input_size,
-        pretrain_weights=model_weights,
-        num_classes=class_count,
-        device=device,
-    )
+    model_kwargs = {
+        "resolution": param.input_size,
+        "num_classes": class_count,
+        "device": device,
+    }
+    if model_weights is not None:
+        model_kwargs["pretrain_weights"] = model_weights
+
+    model = model_class(**model_kwargs)
     return model
 
 
 def download_pretrain_weights(model_name: str) -> str:
     """Download the pre-trained weights for the specified model if not already available."""
-    # Ensure the weights folder exists
-    model_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "weights")
-    os.makedirs(model_folder, exist_ok=True)
-    weight_filename = f"{model_name}.pth"
-    weight_path = os.path.join(model_folder, weight_filename)
+    weights_dir = _weights_dir()
+    candidate_filenames = [
+        f"{model_name}.pt",
+        f"{model_name}.pth",
+    ]
 
-    # Check if the weight file exists
-    if not os.path.exists(weight_path):
-        if weight_filename in OPEN_SOURCE_MODELS:
-            print(f"Downloading pre-trained weights for {model_name}...")
-            download_file(OPEN_SOURCE_MODELS[weight_filename], weight_path)
-            print(f"Download complete: {weight_path}")
-            return weight_path
-        else:
-            raise ValueError(f"No pre-trained weights available for {model_name}")
-    else:
-        print(f"Using existing weights file: {weight_path}")
-        return weight_path
+    for filename in candidate_filenames:
+        output_path = weights_dir / filename
+        if output_path.exists():
+            print(f"Using existing weights file: {output_path}")
+            return str(output_path)
+
+    for filename in candidate_filenames:
+        output_path = weights_dir / filename
+        if _download_with_rfdetr_helper(filename, output_path):
+            print(f"Downloaded RF-DETR weights to {output_path}")
+            return str(output_path)
+
+        if _download_with_url(filename, output_path):
+            print(f"Downloaded RF-DETR weights to {output_path}")
+            return str(output_path)
+
+        if _copy_from_roboflow_cache(filename, output_path):
+            return str(output_path)
+
+    print(
+        "Could not pre-cache RF-DETR weights in the plugin weights folder. "
+        "Falling back to RF-DETR's default weight resolution."
+    )
+    return None

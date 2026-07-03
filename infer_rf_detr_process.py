@@ -1,5 +1,6 @@
 import copy
 
+import numpy as np
 import torch
 from PIL import Image
 
@@ -86,6 +87,38 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
 
         param.update = False
 
+    def _get_contiguous_class_id(self, class_id):
+        class_id = int(class_id)
+        if self.class_ids is None:
+            return class_id
+
+        if class_id in self.class_ids:
+            return self.class_ids.index(class_id)
+
+        return class_id
+
+    def _prepare_image(self, image):
+        if hasattr(image, "detach"):
+            image = image.detach().cpu().numpy()
+
+        image = np.asarray(image)
+        if image.ndim == 4:
+            image = image[0]
+        if image.ndim == 3 and image.shape[0] in (1, 3, 4) and image.shape[-1] not in (1, 3, 4):
+            image = np.transpose(image, (1, 2, 0))
+        if image.dtype != np.uint8:
+            if np.issubdtype(image.dtype, np.floating):
+                max_value = image.max() if image.size else 0
+                if max_value <= 1.0:
+                    image = image * 255
+            image = np.clip(image, 0, 255).astype(np.uint8)
+
+        image = Image.fromarray(np.ascontiguousarray(image))
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+
+        return image
+
     def init_long_process(self):
         self._load_model()
         super().init_long_process()
@@ -102,8 +135,8 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
         # Get image from input/output (numpy array):
         src_image = img_input.get_image()
 
-        # Convert numpy array to PIL image
-        image = Image.fromarray(src_image)
+        # Convert input image to PIL image
+        image = self._prepare_image(src_image)
 
         # Load model
         if param.update:
@@ -122,14 +155,9 @@ class InferRfDetr(dataprocess.CObjectDetectionTask):
                 width = x2 - x1
                 height = y2 - y1
 
-                if self.class_ids is not None:
-                    class_index = self.class_ids.index(cls)
-                else:
-                    class_index = cls
-
                 self.add_object(
                     i,
-                    int(class_index),
+                    self._get_contiguous_class_id(cls),
                     float(conf),
                     float(x1),
                     float(y1),
@@ -159,7 +187,7 @@ class InferRfDetrFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Inference with RF-DETR models"
         # relative path -> as displayed in Ikomia Studio algorithm tree
         self.info.path = "Plugins/Python/Detection"
-        self.info.version = "1.2.0"
+        self.info.version = "2.0.0"
         self.info.icon_path = "images/icon.png"
         self.info.authors = "Robinson, Isaac and Robicheaux, Peter and Popov, Matvei"
         self.info.article = ""
